@@ -1,0 +1,74 @@
+From 07cc04aefc7d1c8be62760aab78b7211f69b4566 Mon Sep 17 00:00:00 2001
+From: Breno Leitao <leitao@debian.org>
+Date: Thu, 5 Nov 2026 02:59:39 -0800
+Subject: [PATCH] btrfs: drain in-flight direct IO before buffered write
+ fallback
+
+When btrfs_direct_write() cannot do a write as direct IO, because the
+offset, the length or the user buffer is not aligned to the sectorsize,
+or the range has compressed extents or page cache, it falls back to
+btrfs_buffered_write(). That dirties the page cache without waiting for
+direct IO still in flight from other tasks:
+
+1) Task A submits an async direct write to block 1 of a folio. iomap
+   invalidates the page cache in the range and submits the bio, and the
+   inode lock is dropped.
+2) Task B issues a 512 byte O_DIRECT write to block 0 of the same folio.
+   btrfs_direct_write() falls back to btrfs_buffered_write(), which
+   dirties the folio.
+3) Task A's write completes. kiocb_invalidate_post_direct_write() finds
+   the folio dirty, invalidate_inode_pages2_range() fails with -EBUSY,
+   and dio_warn_stale_pagecache() logs:
+
+   [    2.048568] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+   [    2.048574] File: /tmp/diorepro.JTCKpJ/block.img PID: 260 Comm: kworker/11:1
+
+   It also records -EIO in the mapping, so the next fsync() fails.
+
+The two writes do not touch the same bytes, they only share a folio.
+With 4K blocks on 64K pages a folio holds 16 blocks, so this is easy to
+hit there. Meta's arm64 hosts with 64K pages hit it with VM disk images
+that are NOCOW files on btrfs, opened with O_DIRECT. In a test, XFS on a
+loop device with direct IO on such a file gets EIO on a log write and
+shuts down within seconds.
+
+Wait for in-flight direct IO before the fallback dirties the page cache,
+as ext4 does since commit 15cdefd0c052 ("ext4: drain in-flight DIO
+before buffered write fallback"). btrfs_buffered_write() holds the inode
+lock exclusively there, so no new direct IO can start until the write is
+done. NOWAIT writes never get there, as btrfs_direct_write() returns
+-EAGAIN for them before falling back.
+
+A reproducer that keeps 4K libaio O_DIRECT writes in flight while other
+threads issue 512 byte O_DIRECT writes to the same folios of a NOCOW
+file got 1123 fdatasync() EIOs in 10 seconds on a 64K page VM, and none
+with this patch.
+
+Fixes: f85781fb505e ("btrfs: switch to iomap for direct IO")
+Signed-off-by: Breno Leitao <leitao@debian.org>
+---
+ fs/btrfs/file.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index f978c6524aa03f..2017a96814d857 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1334,6 +1334,14 @@ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *iter)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/*
++	 * A direct write that fell back to buffered IO must not dirty folios
++	 * while direct IO is in flight: its completion fails to invalidate
++	 * them and records -EIO in the mapping.
++	 */
++	if (iocb->ki_flags & IOCB_DIRECT)
++		inode_dio_wait(inode);
++
+ 	/*
+ 	 * We can only trust the isize with inode lock held, or it can race with
+ 	 * other buffered writes and cause incorrect call of
+-- 
+2.53.0-Meta
+

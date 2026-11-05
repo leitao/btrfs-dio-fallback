@@ -160,4 +160,4 @@ before buffered write fallback").
 
 ## License
 
-GPL-2.0, see `LICENSE`.
+GPL-2.0
