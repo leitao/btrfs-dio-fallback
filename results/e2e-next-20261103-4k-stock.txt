@@ -1,0 +1,14 @@
+===START===
+7.4.0-rc1-next-20261103-diorepro4k-xfs
+PAGESIZE=4096 NPROC=16
+SECTORSIZE=4096
+         =                       sectsz=512   attr=2, projid32bit=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+LOOP=/dev/loop0 dio=1 lbs=512
+--- fsstress -p 8 for 60s on XFS-over-loop
+fsstress rc=124
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- XFS / loop / block errors:
+===END===

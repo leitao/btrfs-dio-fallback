@@ -1,0 +1,23 @@
+===START===
+7.1-based kernel (uname redacted), 72-core NVIDIA Grace
+PAGESIZE=65536 NPROC=72
+/dev/nvme0n1p4 btrfs  rw,relatime,ssd,discard=async,space_cache=v2,subvolid=5,subvol=/
+SECTORSIZE=4096
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+---------------C------ /root/diorepro/block.img
+LOOP=/dev/loop0 dio=1 lbs=512
+--- fsstress -p 8  for 90s on XFS-over-loop
+fsstress rc=0
+INV2_FAIL=3
+DMESG_WARN=0
+--- XFS / loop / block errors:
+[78351.998525] I/O error, dev loop0, sector 0 op 0x1:(WRITE) flags 0x800 phys_seg 0 prio class 2
+[78352.030131] I/O error, dev loop0, sector 0 op 0x1:(WRITE) flags 0x800 phys_seg 0 prio class 2
+[78352.084613] I/O error, dev loop0, sector 3163995 op 0x1:(WRITE) flags 0x9800 phys_seg 1 prio class 2
+[78352.084625] XFS (loop0): log I/O error -5
+[78352.084628] XFS (loop0): Filesystem has been shut down due to log error (0x2).
+[78352.084629] XFS (loop0): Please unmount the filesystem and rectify the problem(s).
+[78352.084637] loop0: writeback error on inode 6294843, offset 634880, sector 4795128
+[78352.084643] loop0: writeback error on inode 6294843, offset 4079616, sector 4803968
+===END===

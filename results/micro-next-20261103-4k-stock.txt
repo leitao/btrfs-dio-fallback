@@ -1,0 +1,21 @@
+===START===
+7.4.0-rc1-next-20261103-diorepro4k
+PAGESIZE=4096 NPROC=16 LAT_NS=50000
+SECTORSIZE=4096
+--- aligned-only: -m 0
+RESULT qd=64 mis=0 chunks=64 overlap=0 cow=0 secs=10 aio_done=1752916 aio_err=0 mis_done=0 mis_err=0 fsync_calls=1874 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race: -m 4
+RESULT qd=64 mis=4 chunks=64 overlap=0 cow=0 secs=10 aio_done=457262 aio_err=0 mis_done=108573 mis_err=0 fsync_calls=1816 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race-overlap: -m 4 -o
+RESULT qd=64 mis=4 chunks=64 overlap=1 cow=0 secs=10 aio_done=479458 aio_err=0 mis_done=103135 mis_err=0 fsync_calls=1819 fsync_eio=331
+INV2_FAIL_KWORKER=368 INV2_FAIL_OTHER=0
+DMESG_WARN=10
+[   22.351489] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+[   22.351493] File: /tmp/diorepro.tOj3GI/block.img PID: 183 Comm: kworker/6:1
+[   22.371366] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+[   22.371368] File: /tmp/diorepro.tOj3GI/block.img PID: 183 Comm: kworker/6:1
+===END===

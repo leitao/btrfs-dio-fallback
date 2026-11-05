@@ -1,0 +1,27 @@
+# stock build: the same tree as the -fix run with the patch reverted; both share LOCALVERSION
+===START===
+7.4.0-rc1-next-20261104-diorepro64k-drain+
+PAGESIZE=65536 NPROC=16
+SECTORSIZE=4096
+         =                       sectsz=512   attr=2, projid32bit=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+---------------C------ /tmp/diorepro.JTCKpJ/block.img
+after mkfs:  576K     9
+LOOP=/dev/loop0 dio=1 lbs=512
+after xfs mount:  896K    14
+--- fsstress -p 8  for 60s on XFS-over-loop
+fsstress rc=0
+INV2_FAIL_KWORKER=2 INV2_FAIL_OTHER=0
+PRE_DIO_INVALIDATE_FAIL=0
+DMESG_WARN=2
+[    2.048568] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+[    2.048574] File: /tmp/diorepro.JTCKpJ/block.img PID: 260 Comm: kworker/11:1
+--- XFS / loop / block errors:
+[    2.048881] I/O error, dev loop0, sector 0 op 0x1:(WRITE) flags 0x800 phys_seg 0 prio class 2
+[    2.048892] I/O error, dev loop0, sector 3145960 op 0x1:(WRITE) flags 0x9800 phys_seg 1 prio class 2
+[    2.048899] XFS (loop0): log I/O error -5
+[    2.048902] XFS (loop0): Filesystem has been shut down due to log error (0x2).
+[    2.048903] XFS (loop0): Please unmount the filesystem and rectify the problem(s).
+[    2.049022] loop0: writeback error on inode 4325525, offset 86994944, sector 3293288
+===END===

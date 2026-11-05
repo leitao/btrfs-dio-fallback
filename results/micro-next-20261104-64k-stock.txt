@@ -1,0 +1,26 @@
+# stock build: the same tree as the -fix run with the patch reverted; both share LOCALVERSION
+===START===
+7.4.0-rc1-next-20261104-diorepro64k-drain+
+PAGESIZE=65536 NPROC=16 LAT_NS=50000
+SECTORSIZE=4096
+--- aligned-only: -m 0
+RESULT qd=64 mis=0 chunks=64 overlap=0 cow=0 secs=10 aio_done=1638232 aio_err=0 mis_done=0 mis_err=0 fsync_calls=1823 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race: -m 4
+RESULT qd=64 mis=4 chunks=64 overlap=0 cow=0 secs=10 aio_done=362078 aio_err=0 mis_done=93891 mis_err=0 fsync_calls=1811 fsync_eio=1123
+INV2_FAIL_KWORKER=1889 INV2_FAIL_OTHER=0
+DMESG_WARN=10
+[   12.064931] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+[   12.064935] File: /tmp/diorepro.rRzD6a/block.img PID: 441 Comm: kworker/15:2
+[   12.123054] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+[   12.123059] File: /tmp/diorepro.rRzD6a/block.img PID: 443 Comm: kworker/15:3
+--- race-overlap: -m 4 -o
+RESULT qd=64 mis=4 chunks=64 overlap=1 cow=0 secs=10 aio_done=207622 aio_err=0 mis_done=111943 mis_err=0 fsync_calls=1782 fsync_eio=811
+INV2_FAIL_KWORKER=1201 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race-cow: -m 4 -C
+RESULT qd=64 mis=4 chunks=64 overlap=0 cow=1 secs=10 aio_done=165505 aio_err=0 mis_done=39315 mis_err=0 fsync_calls=1503 fsync_eio=119
+INV2_FAIL_KWORKER=144 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+===END===

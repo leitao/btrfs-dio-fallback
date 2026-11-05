@@ -1,0 +1,21 @@
+===START===
+7.4.0-rc1-next-20261104-diorepro64k-drain+
+PAGESIZE=65536 NPROC=16 LAT_NS=50000
+SECTORSIZE=4096
+--- aligned-only: -m 0
+RESULT qd=64 mis=0 chunks=64 overlap=0 cow=0 secs=10 aio_done=1605902 aio_err=0 mis_done=0 mis_err=0 fsync_calls=1842 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race: -m 4
+RESULT qd=64 mis=4 chunks=64 overlap=0 cow=0 secs=10 aio_done=88263 aio_err=0 mis_done=91063 mis_err=0 fsync_calls=1766 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race-overlap: -m 4 -o
+RESULT qd=64 mis=4 chunks=64 overlap=1 cow=0 secs=10 aio_done=84903 aio_err=0 mis_done=93194 mis_err=0 fsync_calls=1764 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race-cow: -m 4 -C
+RESULT qd=64 mis=4 chunks=64 overlap=0 cow=1 secs=10 aio_done=157417 aio_err=0 mis_done=37737 mis_err=0 fsync_calls=1511 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+===END===

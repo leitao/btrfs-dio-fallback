@@ -1,0 +1,26 @@
+===START===
+7.1-based kernel (uname redacted), 72-core NVIDIA Grace
+PAGESIZE=65536 NPROC=72
+/dev/nvme0n1p4 btrfs  rw,relatime,ssd,discard=async,space_cache=v2,subvolid=5,subvol=/
+SECTORSIZE=4096
+--- aligned-only: -m 0
+RESULT qd=64 mis=0 chunks=64 overlap=0 cow=0 secs=10 aio_done=1114218 aio_err=0 mis_done=0 mis_err=0 fsync_calls=1920 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+--- race: -m 4
+RESULT qd=64 mis=4 chunks=64 overlap=0 cow=0 secs=10 aio_done=119792 aio_err=0 mis_done=46879 mis_err=0 fsync_calls=1753 fsync_eio=3
+INV2_FAIL_KWORKER=3 INV2_FAIL_OTHER=0
+DMESG_WARN=3
+[78310.968733] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+[78310.968739] File: /root/diorepro/block.img PID: 2194823 Comm: kworker/69:1
+--- race-overlap: -m 4 -o
+RESULT qd=64 mis=4 chunks=64 overlap=1 cow=0 secs=10 aio_done=195760 aio_err=0 mis_done=43434 mis_err=0 fsync_calls=1757 fsync_eio=22
+INV2_FAIL_KWORKER=24 INV2_FAIL_OTHER=0
+DMESG_WARN=7
+[78319.023288] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+[78319.023293] File: /root/diorepro/block.img PID: 3053019 Comm: kworker/46:1
+--- race-cow: -m 4 -C
+RESULT qd=64 mis=4 chunks=64 overlap=0 cow=1 secs=10 aio_done=15616 aio_err=0 mis_done=69391 mis_err=0 fsync_calls=1631 fsync_eio=0
+INV2_FAIL_KWORKER=0 INV2_FAIL_OTHER=0
+DMESG_WARN=0
+===END===
